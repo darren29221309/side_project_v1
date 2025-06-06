@@ -27,10 +27,17 @@ public class AuthController {
     @PostMapping("/login")
     public String login(@RequestBody User user) {
         return userRepository.findByUsername(user.getUsername())
-            .map(existing -> PasswordUtil.matches(user.getPassword(), existing.getPassword())
-                ? "登入成功"
-                : "密碼錯誤")
-            .orElse("帳號不存在");
+            .map(existing -> {
+            if (PasswordUtil.matches(user.getPassword(), existing.getPassword())) {
+                // 增加登入次數
+                existing.setLoginCount(existing.getLoginCount() + 1);
+                userRepository.save(existing); // 更新資料庫
+                return "登入成功，您已登入 " + existing.getLoginCount() + " 次";
+            } else {
+                return "密碼錯誤";
+            }
+        })
+        .orElse("帳號不存在");
     }
 }
 
